@@ -1,0 +1,2 @@
+# 被动DNS系统(Passive DNS)架构的Android客户端
+使用Android提供的VpnService进行抓包并发送至后台服务器端，其他操作由后台完成
