@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">passiveDns</string>
+    <string name="MainActivity_startVpnBtn__enable__text">开启VPN</string>
+    <string name="MainActivity_startVpnBtn__disable__text">退出应用以关闭VPN</string>
+</resources>
