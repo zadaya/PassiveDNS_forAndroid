@@ -34,10 +34,10 @@ public class MyVPNService extends VpnService {
     private static boolean running = false;
 
     // 广播 Vpn 状态
-    public static final String BROADCAST_VPN_STATE = "com.nuaa.is.VPN_STATE";
+    public static final String BROADCAST_VPN_STATE = "com.topzero.passiveDns.VPN_STATE";
 
     // VPN 参数
-    private static final String VPN_ADDRESS = "192.168.1.1";
+    private static final String VPN_ADDRESS = "10.0.0.2";
     private static final int VPN_ADDRESS_MASK = 32;
     private static final String VPN_ROUTE = "0.0.0.0";
     private static final int VPN_ROUTE_MASK = 0;
@@ -64,7 +64,6 @@ public class MyVPNService extends VpnService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i("zadaya", "***************************");
 
         // 设置运行状态
         MyVPNService.running = true;
@@ -72,7 +71,7 @@ public class MyVPNService extends VpnService {
         if (this.parcelFileDescriptor == null) {
             // 设置参数
             Builder builder = new Builder();
-            builder.setSession("MyVpnTest_zadaya");
+            builder.setSession("MyVpnTest-zadaya");
             builder.setMtu(VPN_MTU);
             builder.addAddress(VPN_ADDRESS, VPN_ADDRESS_MASK);
             builder.addRoute(VPN_ROUTE, VPN_ROUTE_MASK);
@@ -93,8 +92,6 @@ public class MyVPNService extends VpnService {
 
             // 创建线程池——开启5个线程
             executorService = Executors.newFixedThreadPool(5);
-            executorService.submit(new UDPInput(networkToDeviceQueue, udpSelector));
-            executorService.submit(new UDPOutput(deviceToNetworkUDPQueue, udpSelector, this));
 
             // 每个线程负责一个任务
             executorService.submit(new UDPInput(networkToDeviceQueue, udpSelector));
@@ -110,18 +107,18 @@ public class MyVPNService extends VpnService {
                     true
             ));
 
-            // 发送广播告知 FirewallVpnService 已经运行
+            // 发送广播告知 passiveDnsService 已经运行
             LocalBroadcastManager
                     .getInstance(this)
                     .sendBroadcast(
                             new Intent(BROADCAST_VPN_STATE).putExtra("running", true)
                     );
 
-            Log.i(MyVPNService.TAG, "FirewallVpnService Started");
+            Log.i(MyVPNService.TAG, "passiveDnsService Started");
 
         } catch (IOException e) {
             e.printStackTrace();
-            Log.e(MyVPNService.TAG, "Can't start FirewallVpnService");
+            Log.e(MyVPNService.TAG, "Can't start passiveDnsService");
 
             // 清理
             clean();
@@ -173,8 +170,8 @@ public class MyVPNService extends VpnService {
         private ConcurrentLinkedQueue<ByteBuffer> networkToDeviceQueue;
 
         // 流控模式
-        private boolean isUdpFlowModeSpy;
-        private boolean isTcpFlowModeSpy;
+        private boolean isUdpFlowModeSpy = true;
+        private boolean isTcpFlowModeSpy = true;
 
         // 构造
         public VPNRunnable(
@@ -287,6 +284,7 @@ public class MyVPNService extends VpnService {
             }
         }
     }
+
     // Getters
     public static boolean isRunning() {
         return running;
