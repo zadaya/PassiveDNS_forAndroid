@@ -12,6 +12,7 @@ import com.topzero.passiveDns.net.UDPInput;
 import com.topzero.passiveDns.net.UDPOutput;
 import com.topzero.passiveDns.model.ByteBufferPool;
 import com.topzero.passiveDns.model.Packet;
+import com.topzero.passiveDns.socket.UDPTest;
 
 import java.io.Closeable;
 import java.io.FileDescriptor;
@@ -26,6 +27,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MyVPNService extends VpnService {
+
+    // UDPSendJsonThread
+    private static UDPTest udpTest = new UDPTest();
 
     // TAG
     private static final String TAG = "MyVPNService";
@@ -225,12 +229,27 @@ public class MyVPNService extends VpnService {
                         bufferToNetwork.flip();
 
                         // 拆包
-                        Packet packet = new Packet(bufferToNetwork);
+                        final Packet packet = new Packet(bufferToNetwork);
 
                         // 判断包的种类
                         if (packet.isUDP()) {
                             // 如果是 UDP 包
                             Log.i(VPNRunnable.TAG, "it's a UDP packet");
+                            Log.e("PrintPacketTest", String.valueOf(packet.udpHeader.destinationPort));
+                            if (packet.udpHeader.destinationPort == 53) {
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        udpTest.ServerReceviedByUdp();
+                                    }
+                                }).start();
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        udpTest.connectServerWithUDPSocket(packet.udpHeader.toString());
+                                    }
+                                }).start();
+                            }
                             // 在队列中加入包
                             if (this.isUdpFlowModeSpy) deviceToNetworkUDPQueue.offer(packet);
                         } else if (packet.isTCP()) {

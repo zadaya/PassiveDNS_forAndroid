@@ -10,10 +10,12 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 
+
 public class UDPTest {
     boolean flag = false;
     // 客户端发送数据实现
-    protected void connectServerWithUDPSocket() {
+    public void connectServerWithUDPSocket(String messageStr) {
+        String MsgStr = messageStr;
         Log.i("zadaya", "发送数据！！！！！！！！！！！！");
         DatagramSocket socket;
         try {
@@ -21,15 +23,16 @@ public class UDPTest {
             //还需要使用这个端口号来receive，所以一定要记住
             socket = new DatagramSocket(1985);
             //使用InetAddress(Inet4Address).getByName把IP地址转换为网络地址
-            InetAddress serverAddress = InetAddress.getByName("10.0.3.15");
+            InetAddress serverAddress = InetAddress.getByName("127.0.0.1");
             //Inet4Address serverAddress = (Inet4Address) Inet4Address.getByName("192.168.1.32");
-            String str = "[2143213;21343fjks;213]";//设置要发送的报文
+            String str = MsgStr;//设置要发送的报文
             byte data[] = str.getBytes();//把字符串str字符串转换为字节数组
             //创建一个DatagramPacket对象，用于发送数据。
             //参数一：要发送的数据  参数二：数据的长度  参数三：服务端的网络地址  参数四：服务器端端口号
             DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, 10025);
             socket.send(packet);//把数据发送到服务端。
-            Log.e("zdy", "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
+            //Log.e("zdy", "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
+            socket.close();
 
         } catch (SocketException e) {
             e.printStackTrace();
@@ -78,15 +81,24 @@ public class UDPTest {
             DatagramPacket packet = new DatagramPacket(data, data.length);
             //读取接收到得数据
             socket.receive(packet);
-            Log.e("zdy", "JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ");
+
+            // 将接收到的数据原路返回发送方
+            // packet.setSocketAddress(packet.getSocketAddress());
+            Thread.sleep(1000);
+            // socket.send(packet);
+
+            //Log.e("zdy", "JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ");
             //把客户端发送的数据转换为字符串。
             //使用三个参数的String方法。参数一：数据包 参数二：起始位置 参数三：数据包长
             String result = new String(packet.getData(), packet.getOffset(), packet.getLength());
             Log.i("zadaya", result);
+            socket.close();
 
         } catch (SocketException e) {
             e.printStackTrace();
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
