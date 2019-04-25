@@ -10,9 +10,9 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 
-
-public class UDPTest {
+public class UdpSocket {
     boolean flag = false;
+
     // 客户端发送数据实现
     public void connectServerWithUDPSocket(String messageStr) {
         String MsgStr = messageStr;

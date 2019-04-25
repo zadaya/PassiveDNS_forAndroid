@@ -12,13 +12,18 @@ import com.topzero.passiveDns.net.UDPInput;
 import com.topzero.passiveDns.net.UDPOutput;
 import com.topzero.passiveDns.model.ByteBufferPool;
 import com.topzero.passiveDns.model.Packet;
-import com.topzero.passiveDns.socket.UDPTest;
+import com.topzero.passiveDns.socket.UdpSocket;
 
 import java.io.Closeable;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.Selector;
@@ -29,7 +34,8 @@ import java.util.concurrent.Executors;
 public class MyVPNService extends VpnService {
 
     // UDPSendJsonThread
-    private static UDPTest udpTest = new UDPTest();
+    private static UdpSocket udpSocket = new UdpSocket();
+    private static ByteBuffer data;
 
     // TAG
     private static final String TAG = "MyVPNService";
@@ -235,18 +241,22 @@ public class MyVPNService extends VpnService {
                         if (packet.isUDP()) {
                             // 如果是 UDP 包
                             Log.i(VPNRunnable.TAG, "it's a UDP packet");
-                            Log.e("PrintPacketTest", String.valueOf(packet.udpHeader.destinationPort));
+                            Log.e("PrintPacketTest_Port", String.valueOf(packet.udpHeader.destinationPort));
+                            Log.e("Print_DNSPacket", String.valueOf(packet.toString()));
+                            data = bufferToNetwork;
+
                             if (packet.udpHeader.destinationPort == 53) {
                                 new Thread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        udpTest.ServerReceviedByUdp();
+                                        udpSocket.ServerReceviedByUdp();
                                     }
                                 }).start();
                                 new Thread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        udpTest.connectServerWithUDPSocket(packet.udpHeader.toString());
+                                        udpSocket.connectServerWithUDPSocket(packet.udpHeader.toString());
+
                                     }
                                 }).start();
                             }

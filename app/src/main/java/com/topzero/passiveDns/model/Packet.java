@@ -411,6 +411,31 @@ public class Packet {
         public int length;  // UDP长度
         public int checksum;  // UDP校验和
 
+        // 定义数据结构 （HTTP端口号80，DNS端口号53）
+        private enum ApplicationProtocol {
+            DNS(53),
+            Other(0xFF);
+
+            private int portNumber;
+
+            // 设置端口号
+            ApplicationProtocol(int portNumber) {
+                this.portNumber = portNumber;
+            }
+
+            // 通过端口号获取协议
+            private static ApplicationProtocol numberToEnum(int portNumber) {
+                if (portNumber == 53)
+                    return DNS;
+                else
+                    return Other;
+            }
+
+            public int getNumber() {
+                return this.portNumber;
+            }
+        }
+
         private UDPHeader(ByteBuffer buffer) {
             this.sourcePort = BitUtils.getUnsignedShort(buffer.getShort());
             this.destinationPort = BitUtils.getUnsignedShort(buffer.getShort());
@@ -438,6 +463,48 @@ public class Packet {
             return sb.toString();
         }
     }
+/*
+
+    public static class DNSHeader {
+        public short transactionID;  // 会话标识
+        public short flags;  // 标志
+        public short questions;  // 问题数
+        public short answerRRs;  // 回答 资源记录数
+        public short authorityRRs;  // 授权 资源记录数
+        public short additionalRRs;  // 附加 资源记录数
+
+        private DNSHeader(ByteBuffer buffer) {
+            this.transactionID = BitUtils.getUnsignedByte(buffer.get());
+            this.flags = BitUtils.getUnsignedByte(buffer.get());
+            this.questions = BitUtils.getUnsignedByte(buffer.get());
+            this.answerRRs = BitUtils.getUnsignedByte(buffer.get());
+            this.authorityRRs = BitUtils.getUnsignedByte(buffer.get());
+            this.additionalRRs = BitUtils.getUnsignedByte(buffer.get());
+        }
+
+        private void fillHeader(ByteBuffer buffer) {
+            buffer.putShort((short) this.transactionID);
+            buffer.putShort((short) this.flags);
+            buffer.putShort((short) this.questions);
+            buffer.putShort((short) this.answerRRs);
+            buffer.putShort((short) this.authorityRRs);
+            buffer.putShort((short) this.additionalRRs);
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("UDPHeader{");
+            sb.append("transactionID=").append(transactionID);
+            sb.append(", flags=").append(flags);
+            sb.append(", questions=").append(questions);
+            sb.append(", answerRRs=").append(answerRRs);
+            sb.append(", authorityRRs=").append(authorityRRs);
+            sb.append(", additionalRRs=").append(additionalRRs);
+            sb.append('}');
+            return sb.toString();
+        }
+    }
+*/
 
     private static class BitUtils {
         private static short getUnsignedByte(byte value) {
