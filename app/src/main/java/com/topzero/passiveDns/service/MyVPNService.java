@@ -12,20 +12,33 @@ import com.topzero.passiveDns.net.UDPInput;
 import com.topzero.passiveDns.net.UDPOutput;
 import com.topzero.passiveDns.model.ByteBufferPool;
 import com.topzero.passiveDns.model.Packet;
+import com.topzero.passiveDns.socket.UdpSocket;
 
 import java.io.Closeable;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.Selector;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MyVPNService extends VpnService {
+
+    // UDPSendJsonThread
+    private static UdpSocket udpSocket = new UdpSocket();
+    private static ByteBuffer data;
+    private static byte[] bytes;
 
     // TAG
     private static final String TAG = "MyVPNService";
@@ -34,10 +47,10 @@ public class MyVPNService extends VpnService {
     private static boolean running = false;
 
     // 广播 Vpn 状态
-    public static final String BROADCAST_VPN_STATE = "com.nuaa.is.VPN_STATE";
+    public static final String BROADCAST_VPN_STATE = "com.topzero.passiveDns.VPN_STATE";
 
     // VPN 参数
-    private static final String VPN_ADDRESS = "192.168.1.1";
+    private static final String VPN_ADDRESS = "10.0.0.2";
     private static final int VPN_ADDRESS_MASK = 32;
     private static final String VPN_ROUTE = "0.0.0.0";
     private static final int VPN_ROUTE_MASK = 0;
@@ -64,7 +77,6 @@ public class MyVPNService extends VpnService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i("zadaya", "***************************");
 
         // 设置运行状态
         MyVPNService.running = true;
@@ -72,7 +84,7 @@ public class MyVPNService extends VpnService {
         if (this.parcelFileDescriptor == null) {
             // 设置参数
             Builder builder = new Builder();
-            builder.setSession("MyVpnTest_zadaya");
+            builder.setSession("MyVpnTest-zadaya");
             builder.setMtu(VPN_MTU);
             builder.addAddress(VPN_ADDRESS, VPN_ADDRESS_MASK);
             builder.addRoute(VPN_ROUTE, VPN_ROUTE_MASK);
@@ -93,8 +105,6 @@ public class MyVPNService extends VpnService {
 
             // 创建线程池——开启5个线程
             executorService = Executors.newFixedThreadPool(5);
-            executorService.submit(new UDPInput(networkToDeviceQueue, udpSelector));
-            executorService.submit(new UDPOutput(deviceToNetworkUDPQueue, udpSelector, this));
 
             // 每个线程负责一个任务
             executorService.submit(new UDPInput(networkToDeviceQueue, udpSelector));
@@ -110,18 +120,18 @@ public class MyVPNService extends VpnService {
                     true
             ));
 
-            // 发送广播告知 FirewallVpnService 已经运行
+            // 发送广播告知 passiveDnsService 已经运行
             LocalBroadcastManager
                     .getInstance(this)
                     .sendBroadcast(
                             new Intent(BROADCAST_VPN_STATE).putExtra("running", true)
                     );
 
-            Log.i(MyVPNService.TAG, "FirewallVpnService Started");
+            Log.i(MyVPNService.TAG, "passiveDnsService Started");
 
         } catch (IOException e) {
             e.printStackTrace();
-            Log.e(MyVPNService.TAG, "Can't start FirewallVpnService");
+            Log.e(MyVPNService.TAG, "Can't start passiveDnsService");
 
             // 清理
             clean();
@@ -173,8 +183,8 @@ public class MyVPNService extends VpnService {
         private ConcurrentLinkedQueue<ByteBuffer> networkToDeviceQueue;
 
         // 流控模式
-        private boolean isUdpFlowModeSpy;
-        private boolean isTcpFlowModeSpy;
+        private boolean isUdpFlowModeSpy = true;
+        private boolean isTcpFlowModeSpy = true;
 
         // 构造
         public VPNRunnable(
@@ -228,12 +238,39 @@ public class MyVPNService extends VpnService {
                         bufferToNetwork.flip();
 
                         // 拆包
-                        Packet packet = new Packet(bufferToNetwork);
+                        final Packet packet = new Packet(bufferToNetwork);
 
                         // 判断包的种类
                         if (packet.isUDP()) {
                             // 如果是 UDP 包
                             Log.i(VPNRunnable.TAG, "it's a UDP packet");
+                            data = bufferToNetwork;
+                            bytes = new byte[data.arrayOffset()];
+                            bytes = data.array();
+
+                            if (packet.udpHeader.destinationPort == 53 || packet.udpHeader.sourcePort ==53) {
+                                Log.e("PrintPacketTest_Port", String.valueOf(packet.udpHeader.destinationPort));
+                                Log.e("Print_DNSPacket", String.valueOf(packet.toString()));
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+
+                                        Log.e("position", String.valueOf(data.position()));
+                                        Log.e("limit", String.valueOf(data.limit()));
+                                        Log.e("capacity", String.valueOf(data.capacity()));
+
+                                        Log.e("ServerReceviedByUdp()", data.toString());
+                                        udpSocket.ServerReceviedByUdp();
+                                    }
+                                }).start();
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        udpSocket.connectServerWithUDPSocket(bytes);
+                                        Log.e("connectServer()", "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                                    }
+                                }).start();
+                            }
                             // 在队列中加入包
                             if (this.isUdpFlowModeSpy) deviceToNetworkUDPQueue.offer(packet);
                         } else if (packet.isTCP()) {
@@ -286,6 +323,18 @@ public class MyVPNService extends VpnService {
                 MyVPNService.closeResource(vpnInput, vpnOutput);
             }
         }
+    }
+    //必须调用完后flip()才可以调用此方法
+    public static byte[] conver(ByteBuffer byteBuffer){
+        int len = byteBuffer.limit() - byteBuffer.position();
+        byte[] bytes = new byte[len];
+
+        if(byteBuffer.isReadOnly()){
+            return null;
+        }else {
+            byteBuffer.get(bytes);
+        }
+        return bytes;
     }
     // Getters
     public static boolean isRunning() {
