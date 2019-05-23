@@ -8,14 +8,14 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 
 
 public class UdpSocket {
     boolean flag = false;
 
     // 客户端发送数据实现
-    public void connectServerWithUDPSocket(String messageStr) {
-        String MsgStr = messageStr;
+    public void connectServerWithUDPSocket(byte[] bytes) {
         Log.i("zadaya", "发送数据！！！！！！！！！！！！");
         DatagramSocket socket;
         try {
@@ -25,13 +25,11 @@ public class UdpSocket {
             //使用InetAddress(Inet4Address).getByName把IP地址转换为网络地址
             InetAddress serverAddress = InetAddress.getByName("127.0.0.1");
             //Inet4Address serverAddress = (Inet4Address) Inet4Address.getByName("192.168.1.32");
-            String str = MsgStr;//设置要发送的报文
-            byte data[] = str.getBytes();//把字符串str字符串转换为字节数组
             //创建一个DatagramPacket对象，用于发送数据。
             //参数一：要发送的数据  参数二：数据的长度  参数三：服务端的网络地址  参数四：服务器端端口号
-            DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, 10025);
+            DatagramPacket packet = new DatagramPacket(bytes, 1024, serverAddress, 10025);
             socket.send(packet);//把数据发送到服务端。
-            //Log.e("zdy", "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
+            Log.e("zdy", "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
             socket.close();
 
         } catch (SocketException e) {

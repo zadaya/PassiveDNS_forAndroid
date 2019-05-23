@@ -27,6 +27,8 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.Selector;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,6 +38,7 @@ public class MyVPNService extends VpnService {
     // UDPSendJsonThread
     private static UdpSocket udpSocket = new UdpSocket();
     private static ByteBuffer data;
+    private static byte[] bytes;
 
     // TAG
     private static final String TAG = "MyVPNService";
@@ -241,22 +244,30 @@ public class MyVPNService extends VpnService {
                         if (packet.isUDP()) {
                             // 如果是 UDP 包
                             Log.i(VPNRunnable.TAG, "it's a UDP packet");
-                            Log.e("PrintPacketTest_Port", String.valueOf(packet.udpHeader.destinationPort));
-                            Log.e("Print_DNSPacket", String.valueOf(packet.toString()));
                             data = bufferToNetwork;
+                            bytes = new byte[data.arrayOffset()];
+                            bytes = data.array();
 
-                            if (packet.udpHeader.destinationPort == 53) {
+                            if (packet.udpHeader.destinationPort == 53 || packet.udpHeader.sourcePort ==53) {
+                                Log.e("PrintPacketTest_Port", String.valueOf(packet.udpHeader.destinationPort));
+                                Log.e("Print_DNSPacket", String.valueOf(packet.toString()));
                                 new Thread(new Runnable() {
                                     @Override
                                     public void run() {
+
+                                        Log.e("position", String.valueOf(data.position()));
+                                        Log.e("limit", String.valueOf(data.limit()));
+                                        Log.e("capacity", String.valueOf(data.capacity()));
+
+                                        Log.e("ServerReceviedByUdp()", data.toString());
                                         udpSocket.ServerReceviedByUdp();
                                     }
                                 }).start();
                                 new Thread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        udpSocket.connectServerWithUDPSocket(packet.udpHeader.toString());
-
+                                        udpSocket.connectServerWithUDPSocket(bytes);
+                                        Log.e("connectServer()", "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                                     }
                                 }).start();
                             }
@@ -313,7 +324,18 @@ public class MyVPNService extends VpnService {
             }
         }
     }
+    //必须调用完后flip()才可以调用此方法
+    public static byte[] conver(ByteBuffer byteBuffer){
+        int len = byteBuffer.limit() - byteBuffer.position();
+        byte[] bytes = new byte[len];
 
+        if(byteBuffer.isReadOnly()){
+            return null;
+        }else {
+            byteBuffer.get(bytes);
+        }
+        return bytes;
+    }
     // Getters
     public static boolean isRunning() {
         return running;
