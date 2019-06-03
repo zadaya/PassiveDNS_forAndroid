@@ -40,7 +40,7 @@ public class UdpSocket implements Runnable {
             //Inet4Address serverAddress = (Inet4Address) Inet4Address.getByName("192.168.1.32");
             //创建一个DatagramPacket对象，用于发送数据。
             //参数一：要发送的数据  参数二：数据的长度  参数三：服务端的网络地址  参数四：服务器端端口号
-            DatagramPacket packet = new DatagramPacket(bytes, bytes.length, serverAddress, 10025);
+            DatagramPacket packet = new DatagramPacket(bytes, bytes.length, serverAddress, 53);
             socket.send(packet);//把数据发送到服务端。
             Log.e("zdy", "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
             socket.close();
