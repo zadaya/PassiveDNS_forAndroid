@@ -1,6 +1,14 @@
 package com.topzero.passiveDns.socket;
 
+import android.app.Application;
+import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
+
+import com.topzero.passiveDns.MainActivity;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -8,11 +16,16 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 
 
-public class UdpSocket {
+public class UdpSocket implements Runnable {
     boolean flag = false;
+
+    public static void setBytes(byte[] bytes) {
+        UdpSocket.bytes = bytes;
+    }
+
+    static byte[] bytes;
 
     // 客户端发送数据实现
     public void connectServerWithUDPSocket(byte[] bytes) {
@@ -23,11 +36,11 @@ public class UdpSocket {
             //还需要使用这个端口号来receive，所以一定要记住
             socket = new DatagramSocket(1985);
             //使用InetAddress(Inet4Address).getByName把IP地址转换为网络地址
-            InetAddress serverAddress = InetAddress.getByName("127.0.0.1");
+            InetAddress serverAddress = InetAddress.getByName("172.17.213.246");
             //Inet4Address serverAddress = (Inet4Address) Inet4Address.getByName("192.168.1.32");
             //创建一个DatagramPacket对象，用于发送数据。
             //参数一：要发送的数据  参数二：数据的长度  参数三：服务端的网络地址  参数四：服务器端端口号
-            DatagramPacket packet = new DatagramPacket(bytes, 1024, serverAddress, 10025);
+            DatagramPacket packet = new DatagramPacket(bytes, bytes.length, serverAddress, 53);
             socket.send(packet);//把数据发送到服务端。
             Log.e("zdy", "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
             socket.close();
@@ -100,5 +113,31 @@ public class UdpSocket {
             e.printStackTrace();
         }
     }
+
+    public void parseJSONWithJSONObject(String jsonData) {
+        try {
+            //将json字符串jsonData装入JSON数组，即JSONArray
+            //jsonData可以是从文件中读取，也可以从服务器端获得
+            JSONArray jsonArray = new JSONArray(jsonData);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                //循环遍历，依次取出JSONObject对象
+                //用getInt和getString方法取出对应键值
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                int stu_no = jsonObject.getInt("stu_no");
+                String stu_name = jsonObject.getString("stu_name");
+                String stu_sex = jsonObject.getString("stu_sex");
+                Log.d("MainActivity", "stu_no: " + stu_no);
+                Log.d("MainActivity", "stu_name: " + stu_name);
+                Log.d("MainActivity", "stu_sex: " + stu_sex);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void run() {
+//        Log.e("zadaya", "Thread Test Pass!");
+        connectServerWithUDPSocket(bytes);
+    }
 }
-//       Log.i("zadaya", "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&******************************");

@@ -37,8 +37,8 @@ public class MyVPNService extends VpnService {
 
     // UDPSendJsonThread
     private static UdpSocket udpSocket = new UdpSocket();
-    private static ByteBuffer data;
-    private static byte[] bytes;
+    // private static ByteBuffer data;
+    // private static byte[] bytes;
 
     // TAG
     private static final String TAG = "MyVPNService";
@@ -243,34 +243,31 @@ public class MyVPNService extends VpnService {
                         // 判断包的种类
                         if (packet.isUDP()) {
                             // 如果是 UDP 包
-                            Log.i(VPNRunnable.TAG, "it's a UDP packet");
-                            data = bufferToNetwork;
-                            bytes = new byte[data.arrayOffset()];
-                            bytes = data.array();
+                            Log.e(VPNRunnable.TAG, "it's a UDP packet");
 
-                            if (packet.udpHeader.destinationPort == 53 || packet.udpHeader.sourcePort ==53) {
+                            /************************************************************/
+                            if (packet.udpHeader.destinationPort == 53 || packet.udpHeader.sourcePort == 53) {
                                 Log.e("PrintPacketTest_Port", String.valueOf(packet.udpHeader.destinationPort));
                                 Log.e("Print_DNSPacket", String.valueOf(packet.toString()));
-                                new Thread(new Runnable() {
-                                    @Override
-                                    public void run() {
 
-                                        Log.e("position", String.valueOf(data.position()));
-                                        Log.e("limit", String.valueOf(data.limit()));
-                                        Log.e("capacity", String.valueOf(data.capacity()));
+//                                bufferToNetwork.flip();
+                                int oldPosition = bufferToNetwork.position();
+                                int oldLimit = bufferToNetwork.limit();
+//                                Log.e("old", String.valueOf(oldPosition)+"    "+String.valueOf(oldLimit));
+                                byte[] bytes = new byte[bufferToNetwork.limit() - bufferToNetwork.position()];
+                                bufferToNetwork.get(bytes);
+                                Log.e("bytes", new String(bytes));
 
-                                        Log.e("ServerReceviedByUdp()", data.toString());
-                                        udpSocket.ServerReceviedByUdp();
-                                    }
-                                }).start();
-                                new Thread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        udpSocket.connectServerWithUDPSocket(bytes);
-                                        Log.e("connectServer()", "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                                    }
-                                }).start();
+//                                bufferToNetwork.flip();
+//                                byte[] bytes_a = new byte[bufferToNetwork.limit() - bufferToNetwork.position()];
+//                                Log.e("bytes_a", new String(bytes));
+//                                Log.e("~~~", String.valueOf( bufferToNetwork.position())+"    "+String.valueOf(bufferToNetwork.limit()));
+                                bufferToNetwork.position(oldPosition);
+                                bufferToNetwork.limit(oldLimit);
+//                                Log.e("new", String.valueOf( bufferToNetwork.position())+"    "+String.valueOf(bufferToNetwork.limit()));
+
                             }
+                            /************************************************************/
                             // 在队列中加入包
                             if (this.isUdpFlowModeSpy) deviceToNetworkUDPQueue.offer(packet);
                         } else if (packet.isTCP()) {
@@ -282,6 +279,8 @@ public class MyVPNService extends VpnService {
                             // 如果是其他包
                             Log.i(VPNRunnable.TAG, "it's a unknown type packet");
                             Log.i(VPNRunnable.TAG, packet.ip4Header.toString());
+//                            Log.e("isTCP?:   ", String.valueOf(packet.isTCP()));
+//                            Log.e("isUDP?:   ", String.valueOf(packet.isUDP()));
                             dataSent = false;
                         }
                     } else {
@@ -324,18 +323,20 @@ public class MyVPNService extends VpnService {
             }
         }
     }
+
     //必须调用完后flip()才可以调用此方法
-    public static byte[] conver(ByteBuffer byteBuffer){
+    public static byte[] conver(ByteBuffer byteBuffer) {
         int len = byteBuffer.limit() - byteBuffer.position();
         byte[] bytes = new byte[len];
 
-        if(byteBuffer.isReadOnly()){
+        if (byteBuffer.isReadOnly()) {
             return null;
-        }else {
+        } else {
             byteBuffer.get(bytes);
         }
         return bytes;
     }
+
     // Getters
     public static boolean isRunning() {
         return running;

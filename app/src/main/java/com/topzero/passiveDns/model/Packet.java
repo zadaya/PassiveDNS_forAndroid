@@ -411,6 +411,56 @@ public class Packet {
         public int length;  // UDP长度
         public int checksum;  // UDP校验和
 
+        private UDPHeader(ByteBuffer buffer) {
+            this.sourcePort = BitUtils.getUnsignedShort(buffer.getShort());
+            this.destinationPort = BitUtils.getUnsignedShort(buffer.getShort());
+
+            this.length = BitUtils.getUnsignedShort(buffer.getShort());
+            this.checksum = BitUtils.getUnsignedShort(buffer.getShort());
+        }
+
+        private void fillHeader(ByteBuffer buffer) {
+            buffer.putShort((short) this.sourcePort);
+            buffer.putShort((short) this.destinationPort);
+
+            buffer.putShort((short) this.length);
+            buffer.putShort((short) this.checksum);
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("UDPHeader{");
+            sb.append("sourcePort=").append(sourcePort);
+            sb.append(", destinationPort=").append(destinationPort);
+            sb.append(", length=").append(length);
+            sb.append(", checksum=").append(checksum);
+            sb.append('}');
+            return sb.toString();
+        }
+    }
+
+    private static class BitUtils {
+        private static short getUnsignedByte(byte value) {
+            return (short) (value & 0xFF);
+        }
+
+        private static int getUnsignedShort(short value) {
+            return value & 0xFFFF;
+        }
+
+        private static long getUnsignedInt(int value) {
+            return value & 0xFFFFFFFFL;
+        }
+    }
+
+    /*
+    public static class UDPHeader {
+        public int sourcePort;  // 源端口
+        public int destinationPort;  // 目的端口
+
+        public int length;  // UDP长度
+        public int checksum;  // UDP校验和
+
         // 定义数据结构 （HTTP端口号80，DNS端口号53）
         private enum ApplicationProtocol {
             DNS(53),
@@ -463,7 +513,6 @@ public class Packet {
             return sb.toString();
         }
     }
-/*
 
     public static class DNSHeader {
         public short transactionID;  // 会话标识
@@ -505,18 +554,4 @@ public class Packet {
         }
     }
 */
-
-    private static class BitUtils {
-        private static short getUnsignedByte(byte value) {
-            return (short) (value & 0xFF);
-        }
-
-        private static int getUnsignedShort(short value) {
-            return value & 0xFFFF;
-        }
-
-        private static long getUnsignedInt(int value) {
-            return value & 0xFFFFFFFFL;
-        }
-    }
 }

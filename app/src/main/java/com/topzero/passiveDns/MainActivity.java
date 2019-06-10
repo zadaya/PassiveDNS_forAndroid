@@ -7,15 +7,29 @@ import android.net.VpnService;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.JsonReader;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 
+import com.google.gson.Gson;
+import com.topzero.passiveDns.model.DnsLogs;
 import com.topzero.passiveDns.service.MyVPNService;
+import com.topzero.passiveDns.socket.UdpSocket;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
 
     // UI组件
     private Button startVpnBtn;
+    private Button udpTestBtn;
+    private EditText sendMessageEdit;
+    private UdpSocket UdpSocketTest;
 
     // 等待 Vpn 启动状态
     private boolean waittingVpnStart;
@@ -27,6 +41,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         startVpnBtn = (Button) findViewById(R.id.startVPN_btn);
+        udpTestBtn = (Button) findViewById(R.id.UDP_Socket_Test);
+        sendMessageEdit = (EditText) findViewById(R.id.sendMessageEdit);
+        UdpSocketTest = new UdpSocket();
         startVpnBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -36,6 +53,24 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     onActivityResult(0, RESULT_OK, null);
                 }
+            }
+        });
+        udpTestBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+//                String msgStr = sendMessageEdit.getText().toString().trim();
+//                byte[] msgByte = msgStr.getBytes();
+//                UdpSocketTest.ServerReceviedByUdp();
+//                new UdpSocket().connectServerWithUDPSocket(msgByte);
+//            UdpSocketTest.parseJSONWithJSONObject("[{ \"stu_no\":12345,\"stu_name\":\"John\",\"stu_sex\":\"male\"\n" +
+//                    "},{ \"stu_no\":12346,\"stu_name\":\"Tom\",\"stu_sex\":\"male\"\n" +
+//                    "},{\"stu_no\":12347,\"stu_name\":\"Lily\",\"stu_sex\":\"female\"}]");
+                String msgStr = sendMessageEdit.getText().toString().trim();
+                DnsLogs dnsLogs = new DnsLogs("test.zadaya.com","111.111.111.111","222.222.222.222","333.333.333.333",new Date());
+                Gson gson = new Gson();
+                msgStr = gson.toJson(dnsLogs);
+                UdpSocketTest.setBytes(msgStr.getBytes());
+                new Thread(UdpSocketTest).start();
             }
         });
     }
